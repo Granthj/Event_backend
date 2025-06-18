@@ -33,17 +33,7 @@ app.use(authorization);
 const storage = multer.memoryStorage();
 const upload = multer({ storage })
 
-// app.use((req, res, next) => {
-    //     res.setHeader('Access-Control-Allow-Origin', '*');
-    //     res.setHeader('Access-Control-Allow-Method', 'POST,GET,OPTIONS');
-    //     res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-    //     if (req.method === 'OPTIONS') {
-    //         return res.sendStatus(200);
-    //     }
-    //     next();
-    // })
 app.post('/upload-img',upload.single('file'),function(req,res){
-    // console.log(req.file,"IMAGE");
     if (!req.file) {
         return res.status(400).json({ error: 'No file provided' });
     }
@@ -82,7 +72,7 @@ app.get('/api/search-cities', async (req, res) => {
     }
 });
 
-mongoose.connect('mongodb+srv://root:8318383381@cluster0.i6ysx75.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0').then(res => {
+mongoose.connect(process.env.DB_URL).then(res => {
     app.listen(7000);
     console.log('Connect');
 })
