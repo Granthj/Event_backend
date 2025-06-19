@@ -13,7 +13,7 @@ const Schema = require('../graphql/schema/index.js');
 const Resolver = require('../graphql/resolver/index.js');
 const cities = require('../graphql/data_utils/cities.json');
 
-// Initialize Cloudinary once at startup
+// Initialize Cloudinary
 cloudinary.config({ 
   cloud_name: process.env.CLOUD_NAME, 
   api_key: process.env.CLOUD_API_KEY, 
@@ -22,85 +22,115 @@ cloudinary.config({
 
 const app = express();
 
-// Enable CORS for production
+// Enhanced CORS configuration
+const whitelist = process.env.FRONTEND_URL?.split(',') || [
+  'http://localhost:1234',
+  'https://*.vercel.app'
+];
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'development' 
-    ? true  // Allow all in dev
-    : process.env.FRONTEND_URL, // Strict in production
-  credentials: true
+  origin: function (origin, callback) {
+    if (!origin || process.env.NODE_ENV === 'development') return callback(null, true);
+    if (whitelist.some(domain => origin.match(new RegExp(`^https?://${domain.replace('*.', '.*\.')}(:\d+)?$`)))) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
+
 app.use(cookieParser());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
-// Health check endpoint
-app.get('/favicon.ico', (req, res) => res.status(204).end());
-app.get('/', (req, res) => {
-  res.status(200).send('✅ Event Backend is running on Vercel');
-});
-
-// Initialize database connection ONCE at startup
-mongoose.connect(process.env.DB_URL, {
+// Database connection with enhanced configuration
+const mongoOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  maxPoolSize: 10, // Increased connection pool
-  socketTimeoutMS: 30000,
-  serverSelectionTimeoutMS: 5000
-})
-.then(() => console.log('✅ MongoDB connected successfully'))
-.catch(err => console.error('❌ MongoDB connection error:', err));
+  maxPoolSize: 15,
+  minPoolSize: 5,
+  serverSelectionTimeoutMS: 10000,
+  socketTimeoutMS: 45000,
+  connectTimeoutMS: 10000,
+  retryWrites: true,
+  retryReads: true
+};
+
+let isDbConnected = false;
+mongoose.connection.on('connected', () => {
+  isDbConnected = true;
+  console.log('✅ MongoDB connected successfully');
+});
+
+mongoose.connection.on('disconnected', () => {
+  isDbConnected = false;
+  console.log('❌ MongoDB disconnected');
+});
+
+(async function connectDB() {
+  try {
+    await mongoose.connect(process.env.DB_URL, mongoOptions);
+  } catch (err) {
+    console.error('❌ MongoDB connection error:', err);
+  }
+})();
+
+// Database ready middleware
+app.use((req, res, next) => {
+  if (!isDbConnected) {
+    return res.status(503).json({ 
+      error: 'Database not ready',
+      status: mongoose.STATES[mongoose.connection.readyState]
+    });
+  }
+  next();
+});
+
+// Routes
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
+app.get('/', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK',
+    dbStatus: mongoose.STATES[mongoose.connection.readyState],
+    uptime: process.uptime()
+  });
+});
 
 // Middlewares
 app.use(authorization);
 app.use(adminAuth);
 
-// Configure file upload
+// File upload configuration
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 4 * 1024 * 1024 }, // 4MB limit
+  limits: { fileSize: 4 * 1024 * 1024 },
 });
 
-// Image upload endpoint with timeout handling
-app.post('/upload-img', upload.single('file'), (req, res) => {
-  req.setTimeout(8000, () => {
-    res.status(504).json({ error: 'Upload timeout' });
-  });
+app.post('/upload-img', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file provided' });
 
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file provided' });
+    const result = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'event_images',
+          public_id: `${Date.now()}-${req.file.originalname}`,
+        },
+        (error, result) => error ? reject(error) : resolve(result)
+      );
+      stream.end(req.file.buffer);
+    });
+
+    res.status(200).json({ imageUrl: result.secure_url });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: 'Upload failed' });
   }
-
-  const start = Date.now();
-  const stream = cloudinary.uploader.upload_stream(
-    {
-      folder: 'event_images',
-      public_id: `${Date.now()}-${req.file.originalname}`,
-    },
-    (error, result) => {
-      const end = Date.now();
-      console.log(`🖼️ Cloudinary upload took ${end - start}ms`);
-      if (error) {
-        console.error('Cloudinary Upload Error:', error);
-        return res.status(500).json({ error: 'Upload failed' });
-      }
-      return res.status(200).json({ imageUrl: result.secure_url });
-    }
-  );
-  
-  stream.end(req.file.buffer);
 });
 
-// GraphQL endpoint with timeout handling
+// GraphQL endpoint
 app.use('/graphql', (req, res) => {
-  req.setTimeout(8000, () => {
-    res.status(504).json({ error: 'GraphQL request timeout' });
-  });
-
-  const start = Date.now();
-  res.on('finish', () => {
-    const end = Date.now();
-    console.log(`📤 GraphQL responded in ${end - start}ms`);
-  });
-
   return createHandler({
     schema: Schema,
     rootValue: Resolver,
@@ -111,26 +141,33 @@ app.use('/graphql', (req, res) => {
 
 // City search endpoint
 app.get('/api/search-cities', (req, res) => {
-  const { query } = req.query;
-  
-  if (!query) {
-    return res.status(400).json({ error: 'Query parameter is required' });
-  }
-
   try {
+    const { query } = req.query;
+    if (!query) return res.status(400).json({ error: 'Query parameter required' });
+
     const regex = new RegExp(`^${query}`, "i");
-    const filtered = cities.filter((item) => regex.test(item.name));
+    const filtered = cities.filter(item => regex.test(item.name));
     res.json(filtered.slice(0, 10));
   } catch (error) {
-    console.error('Error fetching cities:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Search error:', error);
+    res.status(500).json({ error: 'Search failed' });
   }
 });
 
-// Error handling middleware
+// Error handling
 app.use((err, req, res, next) => {
-  console.error('❌ Server Error:', err);
+  console.error('Server Error:', err);
   res.status(500).json({ error: 'Internal server error' });
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    dbStatus: mongoose.STATES[mongoose.connection.readyState],
+    uptime: process.uptime(),
+    memoryUsage: process.memoryUsage()
+  });
 });
 
 module.exports = serverless(app);
