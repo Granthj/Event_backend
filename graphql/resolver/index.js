@@ -1,9 +1,9 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken')
 const mongoose = require('mongoose');
-const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const otpGenerator = require('otp-generator');
+const Razorpay = require('razorpay');
 require('dotenv').config();
 const transporter = require('../../utils/nodemailer.js');
 const Event = require('../../model/Event.js')

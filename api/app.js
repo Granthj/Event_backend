@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
@@ -10,12 +11,11 @@ const cloudinary = require('cloudinary').v2;
 // const axios = require('axios');
 const multer = require('multer');
 const serverless = require('serverless-http');
-const authorization = require('./utils/authorization.js')
+const authorization = require('../utils/authorization.js')
 const { createHandler } = require('graphql-http/lib/use/express');
-const Schema = require('./graphql/schema/index.js');
-const Resolver = require('./graphql/resolver/index.js');
-const cities = require('./graphql/data_utils/cities.json'); // Assuming you have a file with city data
-require('dotenv').config();
+const Schema = require('../graphql/schema/index.js');
+const Resolver = require('../graphql/resolver/index.js');
+const cities = require('../graphql/data_utils/cities.json'); // Assuming you have a file with city data
 cloudinary.config({ 
     cloud_name: process.env.CLOUD_NAME, 
     api_key: process.env.CLOUD_API_KEY, 
