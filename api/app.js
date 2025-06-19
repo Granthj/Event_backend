@@ -77,14 +77,21 @@ app.post('/upload-img',upload.single('file'),function(req,res){
      stream.end(req.file.buffer);
 })
 
-app.use('/graphql', (req, res) =>
-  createHandler({
+app.use('/graphql', (req, res) => {
+  const start = Date.now();
+
+  res.on('finish', () => {
+    const end = Date.now();
+    console.log(`📤 GraphQL responded in ${end - start}ms`);
+  });
+
+  return createHandler({
     schema: Schema,
     rootValue: Resolver,
-    context: () => ({ req, res }), 
+    context: () => ({ req, res }),
     graphiql: true,
-  })(req, res)
-);
+  })(req, res);
+});
 app.get('/api/search-cities', async (req, res) => {
 
     const { query } = req.query; 
@@ -101,8 +108,4 @@ app.get('/api/search-cities', async (req, res) => {
 // mongoose.connect(process.env.DB_URL)
 //     .then(() => console.log('Connected to MongoDB'))
 //     .catch(err => console.log('MongoDB connection error:', err));
- res.on('finish', () => {
-    const end = Date.now();
-    console.log(`📤 GraphQL responded in ${end - start}ms`);
-  });
 module.exports = serverless(app);
