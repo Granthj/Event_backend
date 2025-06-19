@@ -2,8 +2,8 @@
   "name": "graphql",
   "version": "1.0.0",
   "description": "this is test file",
-  "main": "app.js",
-  "start": "nodemon app.js",
+  "main": "index.js",
+  "start": "nodemon index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
