@@ -9,6 +9,7 @@ const cors = require('cors');
 const cloudinary = require('cloudinary').v2;
 // const axios = require('axios');
 const multer = require('multer');
+const serverless = require('serverless-http');
 const authorization = require('./utils/authorization.js')
 const { createHandler } = require('graphql-http/lib/use/express');
 const Schema = require('./graphql/schema/index.js');
@@ -74,7 +75,8 @@ app.get('/api/search-cities', async (req, res) => {
     }
 });
 
-mongoose.connect(process.env.DB_URL).then(res => {
-    app.listen(7000);
-    console.log('Connect');
-})
+mongoose.connect(process.env.DB_URL)
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => console.log('MongoDB connection error:', err));
+
+module.exports = serverless(app);
