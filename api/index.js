@@ -24,10 +24,11 @@ const app = express();
 
 // Enable CORS for production
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:1234',
+  origin: process.env.NODE_ENV === 'development' 
+    ? true  // Allow all in dev
+    : process.env.FRONTEND_URL, // Strict in production
   credentials: true
 }));
-
 app.use(cookieParser());
 app.use(express.json());
 
