@@ -23,12 +23,16 @@ cloudinary.config({
 });
 
 const app = express();
-app.use(cors({
-  origin:'http://localhost:1234', // ✅ your frontend origin
-  credentials: true                // ✅ allow cookies
-}));
+// app.use(cors({
+//   origin:'http://localhost:1234', // ✅ your frontend origin
+//   credentials: true                // ✅ allow cookies
+// }));
 app.use(cookieParser());
 app.use(express.json()); 
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+app.get('/', (req, res) => {
+  res.status(200).send('✅ Event Backend is running on Vercel');
+});
 
 let isConnected = false;
 async function connectDB(){
@@ -52,10 +56,6 @@ app.use(async (req, res, next) => {
   }
 });
 app.use(authorization);
-app.get('/', (req, res) => {
-  res.status(200).send('✅ Event Backend is running on Vercel');
-});
-app.get('/favicon.ico', (req, res) => res.status(204).end());
 const storage = multer.memoryStorage();
 const upload = multer({ storage })
 
