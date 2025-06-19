@@ -2,15 +2,15 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-const fs = require('fs');
-const Event = require('./model/Event.js')
-const User = require('./model/User.js');
-const nodemailer = require('nodemailer');
+// const fs = require('fs');
+// const Event = require('./model/Event.js')
+// const User = require('./model/User.js');
+// const nodemailer = require('nodemailer');
 const cloudinary = require('cloudinary').v2;
-const axios = require('axios');
+// const axios = require('axios');
 const multer = require('multer');
 const authorization = require('./utils/authorization.js')
-const { graphqlHTTP } = require('express-graphql');
+const { createHandler } = require('graphql-http/lib/use/express');
 const Schema = require('./graphql/schema/index.js');
 const Resolver = require('./graphql/resolver/index.js');
 const cities = require('./graphql/data_utils/cities.json'); // Assuming you have a file with city data
@@ -52,12 +52,14 @@ app.post('/upload-img',upload.single('file'),function(req,res){
      stream.end(req.file.buffer);
 })
 
-app.use('/graphql', graphqlHTTP((req,res)=>({
+app.use('/graphql', (req, res) =>
+  createHandler({
     schema: Schema,
     rootValue: Resolver,
+    context: () => ({ req, res }), 
     graphiql: true,
-    context:{ req, res }
-})));
+  })(req, res)
+);
 app.get('/api/search-cities', async (req, res) => {
 
     const { query } = req.query; 

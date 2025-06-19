@@ -12,9 +12,6 @@ const Booking = require('../../model/booking.js');
 const Customer = require('../../model/customer.js');
 const Otp = require('../../model/Otp.js');
 const PasswordResetSession = require('../../model/SessionToken.js');
-const { default: ObjectID } = require('bson-objectid');
-// const { ObjectId } = require('mongodb');
-// let ObjectID = require("bson-objectid");
 let objectId = new mongoose.Types.ObjectId();
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
@@ -216,7 +213,6 @@ module.exports = {
     },
     createCustomer: async (args) => {
         const bool = await Customer.find({ email: args.customerInput.email });
-        console.log(bool, args.customerInput.email, "bool");
         if (bool.length > 0) {
             throw new Error("Email already exists");
         }
@@ -237,7 +233,6 @@ module.exports = {
         const customerData = await Customer.findById(args.cartInput.customerId);
         const alreadyInCart = customerData.cart.find(item => item.eventId.toString() === args.cartInput.eventId.toString());
         if (alreadyInCart) {
-            // console.log("BACKEND")
             return;
         }
         customerData.cart.push({
@@ -497,7 +492,6 @@ module.exports = {
         const city = args.city.toLowerCase();
         const state = args.state.toLowerCase();
         const events = await Event.find({ city, state });
-        console.log(city, state, events, "events by location");
         if (!events || events.length === 0) {
             throw new Error("No events found for the specified location");
         }
@@ -550,9 +544,6 @@ module.exports = {
 
         fetchEvent.bookedBy.push(customers);
         const eventResult = await fetchEvent.save();
-        // console.log(fetchEvent.title, fetchEvent.date, fetchEvent.price, "DETAILS OF EVENT")
-        // console.log(customers.firstname, customers.lastname, "DETAILS OF CUSTOMER");
-        // console.log(req.email)
         const city = fetchEvent.city.charAt(0).toUpperCase() + fetchEvent.city.slice(1).toLowerCase();
         const state = fetchEvent.state.charAt(0).toUpperCase() + fetchEvent.state.slice(1).toLowerCase();
         const mailOptions = {
@@ -593,25 +584,14 @@ module.exports = {
         const { req } = context;
         if (req.auth) {
             const deletedBooking = await Booking.findOne({ _id: args.bookingId });
-            console.log("bella chao", deletedBooking)
             if (!deletedBooking) {
                 throw new Error("Booking not found");
             }
             await Booking.deleteOne({ _id: args.bookingId });
-            console.log(deletedBooking.event, "pooo")
-            // const deletedEvent = await Booking.findById({_id:args.bookingId});
-            // const event ={
-            //     ...deletedEvent.event._doc,
-            //     _id:deletedEvent.event.id,
-            //     event:singleEvent.bind(this,deletedEvent._doc.event)
-            // }
-            // const cancelCreateEvent = await Customer.findById({ _id: req.customerId });
-
             await Customer.findByIdAndUpdate(
                 req.customerId,
                 { $pull: { createEvent: deletedBooking.event.toString() } }
             );
-            // return {...deletedEvent.doc._id};
         }
     },
 
@@ -633,7 +613,6 @@ module.exports = {
             sameSite: 'Lax',
             maxAge: 60 * 60 * 1000 // 1 hour
         });                                      
-        console.log(customer.email,customer.id,"heheh")
         return { CustomerId: customer.id, Email: customer.email,message:"Login Successful" }
 
     },
