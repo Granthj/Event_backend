@@ -1,5 +1,5 @@
-require('dotenv').config();
 const express = require('express');
+require('dotenv').config();
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
@@ -17,20 +17,39 @@ const Schema = require('../graphql/schema/index.js');
 const Resolver = require('../graphql/resolver/index.js');
 const cities = require('../graphql/data_utils/cities.json'); // Assuming you have a file with city data
 cloudinary.config({ 
-    cloud_name: process.env.CLOUD_NAME, 
+  cloud_name: process.env.CLOUD_NAME, 
     api_key: process.env.CLOUD_API_KEY, 
     api_secret: process.env.CLOUD_API_SECRET // Click 'View API Keys' above to copy your API secret
 });
 
 const app = express();
 app.use(cors({
-    origin: 'http://localhost:1234', // ✅ your frontend origin
-    credentials: true                // ✅ allow cookies
+  origin:'http://localhost:1234', // ✅ your frontend origin
+  credentials: true                // ✅ allow cookies
 }));
 app.use(cookieParser());
 app.use(express.json()); 
-app.use(authorization);
 
+let isConnected = false;
+async function connectDB(){
+  if(isConnected) return;
+  await mongoose.connect(process.env.DB_URL,{
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  isConnected = true;
+  console.log("✅ MongoDB Connected");
+}
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("MongoDB connection failed:", err);
+    res.status(500).json({ error: "Database connection failed" });
+  }
+});
+app.use(authorization);
 const storage = multer.memoryStorage();
 const upload = multer({ storage })
 
@@ -74,9 +93,8 @@ app.get('/api/search-cities', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
-
-mongoose.connect(process.env.DB_URL)
-    .then(() => console.log('Connected to MongoDB'))
-    .catch(err => console.log('MongoDB connection error:', err));
+// mongoose.connect(process.env.DB_URL)
+//     .then(() => console.log('Connected to MongoDB'))
+//     .catch(err => console.log('MongoDB connection error:', err));
 
 module.exports = serverless(app);
