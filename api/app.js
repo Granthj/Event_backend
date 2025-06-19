@@ -33,12 +33,14 @@ app.use(express.json());
 let isConnected = false;
 async function connectDB(){
   if(isConnected) return;
+  const start = Date.now();
   await mongoose.connect(process.env.DB_URL,{
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
+  const end = Date.now();
   isConnected = true;
-  console.log("✅ MongoDB Connected");
+  console.log(`✅ MongoDB connected in ${end - start}ms`);
 }
 app.use(async (req, res, next) => {
   try {
@@ -54,6 +56,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage })
 
 app.post('/upload-img',upload.single('file'),function(req,res){
+  const start = Date.now();
     if (!req.file) {
         return res.status(400).json({ error: 'No file provided' });
     }
@@ -63,6 +66,8 @@ app.post('/upload-img',upload.single('file'),function(req,res){
       public_id: `${Date.now()}-${req.file.originalname}`,
     },
     (error, result) => {
+      const end = Date.now();
+      console.log(`🖼️ Cloudinary upload took ${end - start}ms`);
       if (error) {
         console.error('Cloudinary Upload Error:', error);
         return res.status(500).json({ error: 'Upload failed' });
@@ -96,5 +101,8 @@ app.get('/api/search-cities', async (req, res) => {
 // mongoose.connect(process.env.DB_URL)
 //     .then(() => console.log('Connected to MongoDB'))
 //     .catch(err => console.log('MongoDB connection error:', err));
-
+ res.on('finish', () => {
+    const end = Date.now();
+    console.log(`📤 GraphQL responded in ${end - start}ms`);
+  });
 module.exports = serverless(app);
