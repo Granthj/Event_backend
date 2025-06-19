@@ -52,6 +52,10 @@ app.use(async (req, res, next) => {
   }
 });
 app.use(authorization);
+app.get('/', (req, res) => {
+  res.status(200).send('✅ Event Backend is running on Vercel');
+});
+app.get('/favicon.ico', (req, res) => res.status(204).end());
 const storage = multer.memoryStorage();
 const upload = multer({ storage })
 
