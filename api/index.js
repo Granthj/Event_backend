@@ -12,6 +12,22 @@ const { createHandler } = require('graphql-http/lib/use/express');
 const Schema = require('../graphql/schema/index.js');
 const Resolver = require('../graphql/resolver/index.js');
 const cities = require('../graphql/data_utils/cities.json');
+const app = express();
+app.get('/favicon.ico', (req, res) => {
+  console.log("in /favicon.ico route")
+  res.end();
+});
+
+app.get('/', (req, res) => {
+  console.log("in / route")
+  res.json({ 
+    status: 'OK',
+  });
+});
+app.use(cors({
+    origin: 'http://localhost:1234', // ✅ your frontend origin
+    credentials: true                // ✅ allow cookies
+}));
 
 // Initialize Cloudinary
 cloudinary.config({ 
@@ -20,28 +36,10 @@ cloudinary.config({
   api_secret: process.env.CLOUD_API_SECRET
 });
 
-const app = express();
-
-// Enhanced CORS configuration
-const whitelist = process.env.FRONTEND_URL?.split(',') || [
-  'http://localhost:1234',
-  'https://*.vercel.app'
-];
-
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || process.env.NODE_ENV === 'development') return callback(null, true);
-    if (whitelist.some(domain => origin.match(new RegExp(`^https?://${domain.replace('*.', '.*\.')}(:\d+)?$`)))) {
-      return callback(null, true);
-    }
-    callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-  optionsSuccessStatus: 200
-}));
 
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
+// Routes
 
 // Database connection with enhanced configuration
 const mongoOptions = {
@@ -86,26 +84,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
-app.get('/favicon.ico', (req, res) => res.status(204).end());
-
-app.get('/', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK',
-    dbStatus: mongoose.STATES[mongoose.connection.readyState],
-    uptime: process.uptime()
-  });
-});
 
 // Middlewares
 app.use(authorization);
 app.use(adminAuth);
 
 // File upload configuration
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 4 * 1024 * 1024 },
-});
+const upload = multer({ storage })
 
 app.post('/upload-img', upload.single('file'), async (req, res) => {
   try {
@@ -135,7 +120,7 @@ app.use('/graphql', (req, res) => {
     schema: Schema,
     rootValue: Resolver,
     context: () => ({ req, res }),
-    graphiql: process.env.NODE_ENV !== 'production',
+    graphiql: true
   })(req, res);
 });
 
@@ -160,14 +145,5 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    dbStatus: mongoose.STATES[mongoose.connection.readyState],
-    uptime: process.uptime(),
-    memoryUsage: process.memoryUsage()
-  });
-});
 
 module.exports = serverless(app);
