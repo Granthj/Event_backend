@@ -90,6 +90,7 @@ app.use(authorization);
 app.use(adminAuth);
 
 // File upload configuration
+const storage = multer.memoryStorage();
 const upload = multer({ storage })
 
 app.post('/upload-img', upload.single('file'), async (req, res) => {
