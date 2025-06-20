@@ -13,6 +13,15 @@ const Schema = require('../graphql/schema/index.js');
 const Resolver = require('../graphql/resolver/index.js');
 const cities = require('../graphql/data_utils/cities.json');
 const db = process.env.DB_URL;
+const app = express();
+app.use(cors({
+    origin: process.env.FRONTEND_URL, // ✅ your frontend origin //dont write localhost:1234 so anyone can access my backend api from their system localhost:1234 if they got my frontend code.
+    credentials: true                // ✅ allow cookies
+}));
+app.options('*', cors());
+app.use(express.json());
+app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
 mongoose
   .connect(db, {})
   .then((con) => {
@@ -21,39 +30,24 @@ mongoose
   .catch((err) => {
     console.error("DB connection error", err);
   });
-  const app = express();
-  app.use(cors({
-      origin: process.env.FRONTEND_URL, // ✅ your frontend origin //dont write localhost:1234 so anyone can access my backend api from their system localhost:1234 if they got my frontend code.
-      credentials: true                // ✅ allow cookies
-  }));
+  // Initialize Cloudinary
+  cloudinary.config({ 
+    cloud_name: process.env.CLOUD_NAME, 
+    api_key: process.env.CLOUD_API_KEY, 
+    api_secret: process.env.CLOUD_API_SECRET
+  });
+  app.get('/favicon.ico', (req, res) => {
+    console.log("in /favicon.ico route")
+    res.end();
+  });
   app.get('/api/test', (req, res) => {
   res.json({ message: "✅ Test passed" });
-});
-app.get('/favicon.ico', (req, res) => {
-  console.log("in /favicon.ico route")
-  res.end();
-});
-
-app.get('/', (req, res) => {
-  console.log("in / route")
-  res.json({ 
-    status: 'OK',
   });
-});
+  app.get("/", (req, res) => {
+    res.json({ pong: "Server is up and running and working" });
+  });
 
-// Initialize Cloudinary
-cloudinary.config({ 
-  cloud_name: process.env.CLOUD_NAME, 
-  api_key: process.env.CLOUD_API_KEY, 
-  api_secret: process.env.CLOUD_API_SECRET
-});
 
-app.use(express.json());
-app.use(cookieParser());
-app.use(express.urlencoded({ extended: true }));
-app.get("/", (req, res) => {
-  res.json({ pong: "Server is up and running and working" });
-});
 
 // Middlewares
 app.use(authorization);
