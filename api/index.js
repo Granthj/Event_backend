@@ -14,14 +14,6 @@ const Resolver = require('../graphql/resolver/index.js');
 const cities = require('../graphql/data_utils/cities.json');
 const db = process.env.DB_URL;
 const app = express();
-app.use(cors({
-    origin: process.env.FRONTEND_URL, // ✅ your frontend origin //dont write localhost:1234 so anyone can access my backend api from their system localhost:1234 if they got my frontend code.
-    credentials: true                // ✅ allow cookies
-}));
-app.options('*', cors());
-app.use(express.json());
-app.use(cookieParser());
-app.use(express.urlencoded({ extended: true }));
 mongoose
   .connect(db, {})
   .then((con) => {
@@ -30,6 +22,14 @@ mongoose
   .catch((err) => {
     console.error("DB connection error", err);
   });
+app.use(cors({
+    origin: process.env.FRONTEND_URL, // ✅ your frontend origin //dont write localhost:1234 so anyone can access my backend api from their system localhost:1234 if they got my frontend code.
+    credentials: true                // ✅ allow cookies
+}));
+app.options('*', cors());
+app.use(express.json());
+app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
   // Initialize Cloudinary
   cloudinary.config({ 
     cloud_name: process.env.CLOUD_NAME, 
