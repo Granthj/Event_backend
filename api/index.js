@@ -84,8 +84,8 @@ app.use('/graphql', (req, res) => {
   return createHandler({
     schema: Schema,
     rootValue: Resolver,
-    context: () => ({ req, res }),
-    graphiql: true
+    graphiql: true,
+    context: ({ req, res }) => ({ req, res })
   })(req, res);
 });
 
