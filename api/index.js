@@ -23,7 +23,7 @@ mongoose
   });
   const app = express();
   app.use(cors({
-      origin: 'http://localhost:1234', // ✅ your frontend origin
+      origin: process.env.FRONTEND_URL, // ✅ your frontend origin //dont write localhost:1234 so anyone can access my backend api from their system localhost:1234 if they got my frontend code.
       credentials: true                // ✅ allow cookies
   }));
   app.get('/api/test', (req, res) => {
@@ -54,11 +54,6 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
   res.json({ pong: "Server is up and running and working" });
 });
-// Routes
-
-// Database connection with enhanced configuration
-
-
 
 // Middlewares
 app.use(authorization);
