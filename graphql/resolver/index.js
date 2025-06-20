@@ -38,7 +38,8 @@ const OtpSameCode = async (customerEmail, value) => {
         ttlAt: new Date(Date.now() + 30 * 60 * 1000),
     })
     await otpDb.save();
-    await transporter.sendMail(mailOptions);
+    const getting = await transporter.sendMail(mailOptions);
+    console.log(getting,"from nodemailer");
 }
 const events = async (eventId) => {
     const event = await Event.find({ _id: { $in: eventId } });
