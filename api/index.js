@@ -12,7 +12,23 @@ const { createHandler } = require('graphql-http/lib/use/express');
 const Schema = require('../graphql/schema/index.js');
 const Resolver = require('../graphql/resolver/index.js');
 const cities = require('../graphql/data_utils/cities.json');
-const app = express();
+const db = process.env.DB_URL;
+mongoose
+  .connect(db, {})
+  .then((con) => {
+    console.log("db connected");
+  })
+  .catch((err) => {
+    console.error("DB connection error", err);
+  });
+  const app = express();
+  app.use(cors({
+      origin: 'http://localhost:1234', // ✅ your frontend origin
+      credentials: true                // ✅ allow cookies
+  }));
+  app.get('/api/test', (req, res) => {
+  res.json({ message: "✅ Test passed" });
+});
 app.get('/favicon.ico', (req, res) => {
   console.log("in /favicon.ico route")
   res.end();
@@ -24,10 +40,6 @@ app.get('/', (req, res) => {
     status: 'OK',
   });
 });
-app.use(cors({
-    origin: 'http://localhost:1234', // ✅ your frontend origin
-    credentials: true                // ✅ allow cookies
-}));
 
 // Initialize Cloudinary
 cloudinary.config({ 
@@ -36,53 +48,16 @@ cloudinary.config({
   api_secret: process.env.CLOUD_API_SECRET
 });
 
-
+app.use(express.json());
 app.use(cookieParser());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+app.get("/", (req, res) => {
+  res.json({ pong: "Server is up and running and working" });
+});
 // Routes
 
 // Database connection with enhanced configuration
-const mongoOptions = {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  maxPoolSize: 15,
-  minPoolSize: 5,
-  serverSelectionTimeoutMS: 10000,
-  socketTimeoutMS: 45000,
-  connectTimeoutMS: 10000,
-  retryWrites: true,
-  retryReads: true
-};
 
-let isDbConnected = false;
-mongoose.connection.on('connected', () => {
-  isDbConnected = true;
-  console.log('✅ MongoDB connected successfully');
-});
-
-mongoose.connection.on('disconnected', () => {
-  isDbConnected = false;
-  console.log('❌ MongoDB disconnected');
-});
-
-(async function connectDB() {
-  try {
-    await mongoose.connect(process.env.DB_URL, mongoOptions);
-  } catch (err) {
-    console.error('❌ MongoDB connection error:', err);
-  }
-})();
-
-// Database ready middleware
-app.use((req, res, next) => {
-  if (!isDbConnected) {
-    return res.status(503).json({ 
-      error: 'Database not ready',
-      status: mongoose.STATES[mongoose.connection.readyState]
-    });
-  }
-  next();
-});
 
 
 // Middlewares
@@ -142,9 +117,16 @@ app.get('/api/search-cities', (req, res) => {
 
 // Error handling
 app.use((err, req, res, next) => {
-  console.error('Server Error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+    err.statusCode = err.statusCode || 500;
+    err.status = err.status || "error";
+
+    res.status(err.statusCode).json({
+        status: err.status,
+        message: err.message,
+    })
+});
+app.listen(8000, () => {
+  console.log("listening");
 });
 
-
-module.exports = serverless(app);
+ module.exports = app;
