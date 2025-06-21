@@ -39,9 +39,11 @@ const OtpSameCode = async (customerEmail, value) => {
             expiresAt: expiresAt,
             ttlAt: new Date(Date.now() + 30 * 60 * 1000),
         });
+        console.log("⏳ Saving OTP...");
         await otpDb.save();
         console.log("✅ OTP saved to DB");
 
+        console.log("⏳ Sending email...");
         const result = await transporter.sendMail(mailOptions);
         console.log("✅ Email sent:", result.response);
     } catch (err) {
