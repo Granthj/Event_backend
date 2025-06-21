@@ -32,14 +32,21 @@ const OtpSameCode = async (customerEmail, value) => {
         subject: 'Your OTP Code',
         text: `Your OTP code for ${value} is ${otp}. It will expire in 1 minutes.`,
     };
-    const otpDb = new Otp({
-        email: customerEmail,
-        code: otp,
-        expiresAt: expiresAt,
-        ttlAt: new Date(Date.now() + 30 * 60 * 1000),
-    })
-    await otpDb.save();
-    const getting = await transporter.sendMail(mailOptions);
+     try {
+        const otpDb = new Otp({
+            email: customerEmail,
+            code: otp,
+            expiresAt: expiresAt,
+            ttlAt: new Date(Date.now() + 30 * 60 * 1000),
+        });
+        await otpDb.save();
+        console.log("✅ OTP saved to DB");
+
+        const result = await transporter.sendMail(mailOptions);
+        console.log("✅ Email sent:", result.response);
+    } catch (err) {
+        console.error("❌ Email sending failed:", err);
+    }
 }
 const events = async (eventId) => {
     const event = await Event.find({ _id: { $in: eventId } });
