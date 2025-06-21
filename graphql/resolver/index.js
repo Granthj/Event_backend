@@ -29,16 +29,16 @@ const OtpSameCode = async (customerEmail, value) => {
     const expiresAt = new Date(Date.now() + 1 * 60 * 1000);
 
     console.log("⏳ Creating OTP instance...");
-    // const otpDb = new Otp({
-    //   email: customerEmail,
-    //   code: otp,
-    //   expiresAt,
-    //   ttlAt: new Date(Date.now() + 30 * 60 * 1000),
-    // });
+    const otpDb = new Otp({
+      email: customerEmail,
+      code: otp,
+      expiresAt,
+      ttlAt: new Date(Date.now() + 30 * 60 * 1000),
+    });
 
-    // console.log("⏳ Saving OTP to DB...");
-    // await otpDb.save();
-    // console.log("✅ OTP saved to DB");
+    console.log("⏳ Saving OTP to DB...");
+    await otpDb.save();
+    console.log("✅ OTP saved to DB");
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
@@ -48,13 +48,13 @@ const OtpSameCode = async (customerEmail, value) => {
     };
 
     console.log("⏳ Sending email...");
-    const result = await Promise.race([
-    transporter.sendMail(mailOptions),
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Email send timed out after 5s")), 5000)
-    )
-  ]);
-    // const result = await transporter.sendMail(mailOptions);
+    // transporter.sendMail(mailOptions),
+//     const result = await Promise.race([
+//     new Promise((_, reject) =>
+//       setTimeout(() => reject(new Error("Email send timed out after 5s")), 5000)
+//     )
+//   ]);
+    const result = await transporter.sendMail(mailOptions);
     console.log("✅ Email sent:", result.response);
   } catch (err) {
     console.error("❌ Email sending failed:", err.message || err);
@@ -414,7 +414,7 @@ module.exports = {
             throw new Error('Email not found');
         }
         const value = "forgot password"
-        OtpSameCode(customerEmail, value);
+        await OtpSameCode(customerEmail, value);
         return 'otp sent successfully';
 
     },
@@ -425,7 +425,7 @@ module.exports = {
             throw new Error('Email already used!');
         }
         const value = "update email"
-        OtpSameCode(customerEmail, value);
+        await OtpSameCode(customerEmail, value);
         return 'otp sent successfully';
 
     },
@@ -436,7 +436,7 @@ module.exports = {
             throw new Error('Email already used!');
         }
         const value = "to create account"
-        OtpSameCode(customerEmail, value);
+        await OtpSameCode(customerEmail, value);
         return 'otp sent successfully';
     },
     verifyOtp: async (args) => {
