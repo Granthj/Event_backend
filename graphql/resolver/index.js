@@ -29,16 +29,16 @@ const OtpSameCode = async (customerEmail, value) => {
     const expiresAt = new Date(Date.now() + 1 * 60 * 1000);
 
     console.log("⏳ Creating OTP instance...");
-    const otpDb = new Otp({
-      email: customerEmail,
-      code: otp,
-      expiresAt,
-      ttlAt: new Date(Date.now() + 30 * 60 * 1000),
-    });
+    // const otpDb = new Otp({
+    //   email: customerEmail,
+    //   code: otp,
+    //   expiresAt,
+    //   ttlAt: new Date(Date.now() + 30 * 60 * 1000),
+    // });
 
-    console.log("⏳ Saving OTP to DB...");
-    await otpDb.save();
-    console.log("✅ OTP saved to DB");
+    // console.log("⏳ Saving OTP to DB...");
+    // await otpDb.save();
+    // console.log("✅ OTP saved to DB");
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
