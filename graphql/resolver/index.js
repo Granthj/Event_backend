@@ -18,38 +18,43 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 const OtpSameCode = async (customerEmail, value) => {
-    console.log("from nodemailer");
+  try {
+    console.log("⏳ Generating OTP...");
     const otp = otpGenerator.generate(4, {
-        digits: true,
-        upperCaseAlphabets: false,
-        lowerCaseAlphabets: false,
-        specialChars: false,
+      digits: true,
+      upperCaseAlphabets: false,
+      lowerCaseAlphabets: false,
+      specialChars: false,
     });
     const expiresAt = new Date(Date.now() + 1 * 60 * 1000);
-    const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: customerEmail,
-        subject: 'Your OTP Code',
-        text: `Your OTP code for ${value} is ${otp}. It will expire in 1 minutes.`,
-    };
-     try {
-        const otpDb = new Otp({
-            email: customerEmail,
-            code: otp,
-            expiresAt: expiresAt,
-            ttlAt: new Date(Date.now() + 30 * 60 * 1000),
-        });
-        console.log("⏳ Saving OTP...");
-        await otpDb.save();
-        console.log("✅ OTP saved to DB");
 
-        console.log("⏳ Sending email...");
-        const result = await transporter.sendMail(mailOptions);
-        console.log("✅ Email sent:", result.response);
-    } catch (err) {
-        console.error("❌ Email sending failed:", err);
-    }
-}
+    console.log("⏳ Creating OTP instance...");
+    const otpDb = new Otp({
+      email: customerEmail,
+      code: otp,
+      expiresAt,
+      ttlAt: new Date(Date.now() + 30 * 60 * 1000),
+    });
+
+    console.log("⏳ Saving OTP to DB...");
+    await otpDb.save();
+    console.log("✅ OTP saved to DB");
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: customerEmail,
+      subject: 'Your OTP Code',
+      text: `Your OTP code for ${value} is ${otp}. It will expire in 1 minute.`,
+    };
+
+    console.log("⏳ Sending email...");
+    const result = await transporter.sendMail(mailOptions);
+    console.log("✅ Email sent:", result.response);
+  } catch (err) {
+    console.error("❌ Email sending failed:", err.message || err);
+  }
+};
+
 const events = async (eventId) => {
     const event = await Event.find({ _id: { $in: eventId } });
     return event.map(events => {
