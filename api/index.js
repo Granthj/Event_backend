@@ -12,36 +12,21 @@ const { createHandler } = require('graphql-http/lib/use/express');
 const Schema = require('../graphql/schema/index.js');
 const Resolver = require('../graphql/resolver/index.js');
 const cities = require('../graphql/data_utils/cities.json');
-const connectToDatabase = require('../utils/db.js');
 const app = express();
-// mongoose
-//   .connect(db, {})
-//   .then((con) => {
-//     console.log("db connected");
-//   })
-//   .catch((err) => {
-//     console.error("DB connection error", err);
-//   });
-connectToDatabase()
-  .then(() => {
-    console.log('✅ MongoDB connected (cached or fresh)');
-    
-    // Middlewares and routes go here
-    app.use(express.json());
-    
-    app.get('/api/test', (req, res) => {
-      res.json({ message: '✅ Test passed' });
-    });
-  }).catch((err) => {
-    console.error('❌ DB connection error:', err.message);
-    process.exit(1); // Optional: stop server on failure
+mongoose
+  .connect(db, {})
+  .then((con) => {
+    console.log("db connected");
+  })
+  .catch((err) => {
+    console.error("DB connection error", err);
   });
 app.use(cors({
     origin: process.env.FRONTEND_URL, // ✅ your frontend origin //dont write localhost:1234 so anyone can access my backend api from their system localhost:1234 if they got my frontend code.
     credentials: true                // ✅ allow cookies
 }));
 app.options('*', cors());
-// app.use(express.json());
+app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
   // Initialize Cloudinary
@@ -54,9 +39,9 @@ app.use(express.urlencoded({ extended: true }));
     console.log("in /favicon.ico route")
     res.end();
   });
-  // app.get('/api/test', (req, res) => {
-  // res.json({ message: "✅ Test passed" });
-  // });
+  app.get('/api/test', (req, res) => {
+  res.json({ message: "✅ Test passed" });
+  });
   app.get("/", (req, res) => {
     res.json({ pong: "Server is up and running and working" });
   });
