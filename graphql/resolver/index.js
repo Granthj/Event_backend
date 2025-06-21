@@ -48,7 +48,13 @@ const OtpSameCode = async (customerEmail, value) => {
     };
 
     console.log("⏳ Sending email...");
-    const result = await transporter.sendMail(mailOptions);
+    const result = await Promise.race([
+    transporter.sendMail(mailOptions),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Email send timed out after 5s")), 5000)
+    )
+  ]);
+    // const result = await transporter.sendMail(mailOptions);
     console.log("✅ Email sent:", result.response);
   } catch (err) {
     console.error("❌ Email sending failed:", err.message || err);
