@@ -18,6 +18,7 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 const OtpSameCode = async (customerEmail, value) => {
+    console.log("from nodemailer");
     const otp = otpGenerator.generate(4, {
         digits: true,
         upperCaseAlphabets: false,
@@ -39,7 +40,6 @@ const OtpSameCode = async (customerEmail, value) => {
     })
     await otpDb.save();
     const getting = await transporter.sendMail(mailOptions);
-    console.log(getting,"from nodemailer");
 }
 const events = async (eventId) => {
     const event = await Event.find({ _id: { $in: eventId } });
