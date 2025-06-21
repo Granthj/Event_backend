@@ -13,6 +13,7 @@ const Schema = require('../graphql/schema/index.js');
 const Resolver = require('../graphql/resolver/index.js');
 const cities = require('../graphql/data_utils/cities.json');
 const app = express();
+const db = process.env.DB_URL
 mongoose
   .connect(db, {})
   .then((con) => {
