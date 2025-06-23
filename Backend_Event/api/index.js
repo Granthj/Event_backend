@@ -12,7 +12,7 @@ const { createHandler } = require('graphql-http/lib/use/express');
 const Schema = require('../graphql/schema/index.js');
 const Resolver = require('../graphql/resolver/index.js');
 const cities = require('../graphql/data_utils/cities.json');
-const connectToDatabase = require('./utils/db.js');
+const connectToDatabase = require('../utils/db.js');
 const app = express();
 const db = process.env.DB_URL
 // mongoose
