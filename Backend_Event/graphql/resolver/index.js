@@ -26,7 +26,7 @@ const OtpSameCode = async (customerEmail, value) => {
       lowerCaseAlphabets: false,
       specialChars: false,
     });
-    const expiresAt = new Date(Date.now() + 1 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 3 * 60 * 1000);
 
     console.log("⏳ Creating OTP instance...");
     const otpDb = new Otp({
@@ -44,7 +44,7 @@ const OtpSameCode = async (customerEmail, value) => {
       from: process.env.EMAIL_USER,
       to: customerEmail,
       subject: 'Your OTP Code',
-      text: `Your OTP code for ${value} is ${otp}. It will expire in 1 minute.`,
+      text: `Your OTP code for ${value} is ${otp}. It will expire in 3 minute.`,
     };
 
     console.log("⏳ Sending email...");
