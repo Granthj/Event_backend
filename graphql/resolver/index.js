@@ -619,6 +619,7 @@ module.exports = {
     login: async ({ email, password },context) => {
         const { req,res } = context;
         const customer = await Customer.findOne({ email: email });
+        console.log(customer,"LOGIN CUSTOMER")
         if (!customer) {
             throw Error('Email is incorrect');
         }
