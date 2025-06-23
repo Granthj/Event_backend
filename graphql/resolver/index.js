@@ -360,6 +360,7 @@ module.exports = {
     },
     customerData: async (args, context) => {
         const { req } = context;
+        console.log(req.auth, "req.auth");
         if (!req.auth) {
             throw new Error("You are not authenticated");
         }
