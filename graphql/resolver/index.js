@@ -652,7 +652,12 @@ module.exports = {
     },        
     logOut:async(args,context)=>{
         const { req, res } = context;
-        res.clearCookie('token');
+        res.clearCookie('token', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'None',
+            path: '/'
+    });
         return {message:"Logout Successful"}
     },
 
