@@ -633,7 +633,7 @@ module.exports = {
         res.cookie('token', token, {
             httpOnly: true,
             secure: true, // Set to true in production (HTTPS only)
-            sameSite: 'Strict',
+            sameSite: 'None',
             maxAge: 60 * 60 * 1000 // 1 hour
         });                                      
         return { CustomerId: customer.id, Email: customer.email,message:"Login Successful" }
