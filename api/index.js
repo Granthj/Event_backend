@@ -12,16 +12,17 @@ const { createHandler } = require('graphql-http/lib/use/express');
 const Schema = require('../graphql/schema/index.js');
 const Resolver = require('../graphql/resolver/index.js');
 const cities = require('../graphql/data_utils/cities.json');
+const connectToDatabase = require('./utils/db');
 const app = express();
 const db = process.env.DB_URL
-mongoose
-  .connect(db, {})
-  .then((con) => {
-    console.log("db connected");
-  })
-  .catch((err) => {
-    console.error("DB connection error", err);
-  });
+// mongoose
+//   .connect(db, {})
+//   .then((con) => {
+//     console.log("db connected");
+//   })
+//   .catch((err) => {
+//     console.error("DB connection error", err);
+//   });
 app.use(cors({
     origin: process.env.FRONTEND_URL, // ✅ your frontend origin //dont write localhost:1234 so anyone can access my backend api from their system localhost:1234 if they got my frontend code.
     credentials: true                // ✅ allow cookies
@@ -114,8 +115,11 @@ app.use((err, req, res, next) => {
         message: err.message,
     })
 });
-app.listen(8000, () => {
-  console.log("listening");
+
+connectToDatabase().then(() => {
+  app.listen(8000, () => {
+    console.log('🚀 Server is running on port 8000');
+  });
 });
 
  module.exports = app;
